@@ -1,0 +1,78 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {"type": "string"},
+    "hostName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hostSkuName": {
+      "type": "string",
+      "defaultValue": "F1",
+      "allowedValues": [
+        "F1",
+        "S1"
+
+      ],
+      "metadata": {
+        "description": "Describes plan's pricing tier and capacity. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
+      }
+    }
+  },
+  "variables": {
+    "siteName": "[concat('site', uniqueString(resourceGroup().id))]"},
+  "resources": [
+    {
+      "name": "[parameters('hostName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-08-01",
+      "sku": {
+        "name": "[parameters('hostSkuName')]"
+      },
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "host"
+      },
+      "properties": {
+        "name": "[parameters('hostName')]",
+        "numberOfWorkers": 1
+      }
+    },
+    {
+      "name": "[variables('siteName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-08-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('hostName'))]"
+      ],
+      "tags": {
+        "[concat('hidden-related:', resourceId('Microsoft.Web/serverfarms', parameters('hostName')))]": "Resource",
+        "displayName": "site"
+      },
+      "properties": {
+        "name": "[variables('siteName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostName'))]"
+      },
+      "resources": [
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('siteName'))]"
+          ],
+          "tags": {
+            "displayName": "config"
+          },
+          "properties": {
+            "EnvName": "ARM",
+            "FavoriteColor": "lightpink"
+          }
+        }
+      ]
+    }],
+  "outputs": {}
+}
